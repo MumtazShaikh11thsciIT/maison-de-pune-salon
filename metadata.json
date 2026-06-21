@@ -1,0 +1,6 @@
+{
+  "name": "Pune Home Salon",
+  "description": "Premium luxury home salon and spa beauty delivery platform for Pune.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
