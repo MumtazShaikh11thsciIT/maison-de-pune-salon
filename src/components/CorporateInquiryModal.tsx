@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Building2, Mail, FileText, CheckCircle2, ShieldCheck, ArrowRight } from 'lucide-react';
 
@@ -6,18 +6,36 @@ interface CorporateInquiryModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  initialCompanyName?: string;
+  initialWorkEmail?: string;
+  initialDetails?: string;
+  forceSubmitted?: boolean;
 }
 
 export default function CorporateInquiryModal({ 
   isOpen, 
   onClose, 
-  onSuccess 
+  onSuccess,
+  initialCompanyName = '',
+  initialWorkEmail = '',
+  initialDetails = '',
+  forceSubmitted = false
 }: CorporateInquiryModalProps) {
-  const [companyName, setCompanyName] = useState('');
-  const [workEmail, setWorkEmail] = useState('');
-  const [details, setDetails] = useState('');
+  const [companyName, setCompanyName] = useState(initialCompanyName);
+  const [workEmail, setWorkEmail] = useState(initialWorkEmail);
+  const [details, setDetails] = useState(initialDetails);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(forceSubmitted);
+
+  // Sync state values reactivity for tour input autofilling simulation
+  useEffect(() => {
+    if (isOpen) {
+      setCompanyName(initialCompanyName);
+      setWorkEmail(initialWorkEmail);
+      setDetails(initialDetails);
+      setIsSubmitted(forceSubmitted);
+    }
+  }, [isOpen, initialCompanyName, initialWorkEmail, initialDetails, forceSubmitted]);
 
   if (!isOpen) return null;
 

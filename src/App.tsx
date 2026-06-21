@@ -14,6 +14,7 @@ import { SERVICES, STYLISTS, PUNE_LOCATIONS } from './data';
 import { ServiceItem, Booking } from './types';
 import BookingModal from './components/BookingModal';
 import CorporateInquiryModal from './components/CorporateInquiryModal';
+import InteractiveTour from './components/InteractiveTour';
 
 // Register GSAP plugins
 if (typeof window !== 'undefined') {
@@ -25,6 +26,25 @@ export default function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCorporateModalOpen, setIsCorporateModalOpen] = useState(false);
   const [selectedService, setSelectedService] = useState<ServiceItem | null>(SERVICES[0]);
+
+  // Interactive Live Presentation Tour states
+  const [tourState, setTourState] = useState<{
+    isActive: boolean;
+    simulatedDevices: 'desktop' | 'mobile';
+    hoveredCardId: string | null;
+  }>({
+    isActive: false,
+    simulatedDevices: 'desktop',
+    hoveredCardId: null
+  });
+
+  const [corporateAutofill, setCorporateAutofill] = useState<{
+    company: string;
+    email: string;
+    details: string;
+  } | undefined>(undefined);
+
+  const [corporateForceSubmitted, setCorporateForceSubmitted] = useState(false);
   
   // Real active bookings from localStorage
   const [localBookings, setLocalBookings] = useState<Booking[]>([]);
@@ -215,12 +235,22 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      {/* Persistent Sticky Luxury Header */}
-      <header className="sticky top-0 z-40 bg-gold-50/95 backdrop-blur-md border-b border-charcoal-900/10 px-6 py-4 transition-all">
+      {/* Dynamic Sizing Container Wrapper for the Showcase tour mobile responsiveness animation */}
+      <div 
+        id="tour-app-container"
+        className={`transition-all duration-1000 ease-in-out ${
+          tourState.isActive && tourState.simulatedDevices === 'mobile'
+            ? 'max-w-[390px] mx-auto border-[12px] border-charcoal-900 rounded-[40px] shadow-2xl overflow-hidden my-8 bg-white relative h-[82vh] max-h-[800px] overflow-y-auto index-10'
+            : 'w-full'
+        }`}
+      >
+
+        {/* Persistent Sticky Luxury Header */}
+        <header className="sticky top-0 z-40 bg-gold-50/95 backdrop-blur-md border-b border-charcoal-900/10 px-6 py-4 transition-all">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           
           {/* Logo Branding */}
-          <a href="#" className="flex flex-col select-none">
+          <a id="tour-header-logo" href="#" className="flex flex-col select-none">
             <span className="font-serif text-lg font-bold tracking-widest text-charcoal-900">MAISON DE PUNE</span>
             <span className="font-mono text-[9px] text-gold-400 tracking-widest uppercase">SALON DE LUXE</span>
           </a>
@@ -296,6 +326,7 @@ export default function App() {
 
             {/* Main Headline */}
             <motion.h1 
+              id="tour-hero-headline"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.9, delay: 0.2 }}
@@ -324,6 +355,7 @@ export default function App() {
             className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4 md:pt-6"
           >
             <button 
+              id="tour-hero-cta"
               onClick={() => triggerBooking(SERVICES[0])}
               className="w-full sm:w-auto bg-charcoal-900 hover:bg-gold-400 hover:text-charcoal-950 text-gold-50 px-8 py-4 rounded-lg text-sm font-semibold uppercase tracking-widest transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer shadow-xl font-mono"
             >
@@ -484,7 +516,11 @@ export default function App() {
             {filteredServices.map((service) => (
               <div 
                 key={service.id}
-                className="offering-card group relative rounded-xl border border-charcoal-200 bg-white overflow-hidden flex flex-col justify-between transition-all hover:border-gold-400 hover:scale-[1.01] luxury-glow"
+                className={`offering-card group relative rounded-xl border bg-white overflow-hidden flex flex-col justify-between transition-all luxury-glow ${
+                  tourState.hoveredCardId === service.id 
+                    ? 'border-gold-400 scale-[1.01] shadow-2xl ring-2 ring-gold-400/35' 
+                    : 'border-charcoal-200 hover:border-gold-400 hover:scale-[1.01]'
+                }`}
               >
                 {/* Visual Cover with Dark Overlay */}
                 <div className="relative h-52 sm:h-56 overflow-hidden">
@@ -892,6 +928,7 @@ export default function App() {
               Book Your Stylist Now
             </button>
             <button 
+              id="corporate-inquiry-button-trigger"
               type="button"
               onClick={() => setIsCorporateModalOpen(true)}
               className="w-full sm:w-auto bg-transparent border border-charcoal-200 hover:border-gold-400 text-charcoal-800 hover:text-charcoal-950 px-8 py-4 rounded-lg text-sm font-semibold uppercase tracking-widest transition-all font-mono text-center cursor-pointer"
@@ -999,6 +1036,8 @@ export default function App() {
         </div>
       </footer>
 
+      </div> {/* End of Dynamic Sizing Container Wrapper */}
+
       {/* Booking Modal render segment */}
       <BookingModal 
         isOpen={isModalOpen}
@@ -1010,8 +1049,33 @@ export default function App() {
       {/* Corporate Inquiry Modal render segment */}
       <CorporateInquiryModal
         isOpen={isCorporateModalOpen}
-        onClose={() => setIsCorporateModalOpen(false)}
+        onClose={() => {
+          setIsCorporateModalOpen(false);
+          setCorporateAutofill(undefined);
+          setCorporateForceSubmitted(false);
+        }}
         onSuccess={() => showToast('Maison Elite: Your premium corporate proposal has been successfully registered.')}
+        initialCompanyName={corporateAutofill?.company}
+        initialWorkEmail={corporateAutofill?.email}
+        initialDetails={corporateAutofill?.details}
+        forceSubmitted={corporateForceSubmitted}
+      />
+
+      {/* Interactive Cinematic Presentation Showcase Tour overlay element */}
+      <InteractiveTour
+        onTourStateChange={(state) => setTourState(state)}
+        onOpenCorporateModal={(autofill) => {
+          setCorporateAutofill(autofill);
+          setIsCorporateModalOpen(true);
+        }}
+        onCloseCorporateModal={() => {
+          setIsCorporateModalOpen(false);
+          setCorporateAutofill(undefined);
+          setCorporateForceSubmitted(false);
+        }}
+        onTriggerDirectSuccess={() => {
+          setCorporateForceSubmitted(true);
+        }}
       />
 
     </div>
